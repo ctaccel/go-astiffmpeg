@@ -405,11 +405,46 @@ func (o OutputOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	return
 }
 
-// ComplexFilterOption represents complex filter options
-type ComplexFilterOption struct {
+type ComplexFilter struct {
 	Filters       []string
 	InputStreams  []StreamSpecifier
 	OutputStreams []StreamSpecifier
+}
+
+// ComplexFilterOptions represents complex filter option
+type ComplexFilterOptions struct {
+	OutputNum      *int
+	ComplexFilters []ComplexFilter
+}
+
+func (o ComplexFilterOptions) adaptCmd(cmd *exec.Cmd) (err error) {
+	if o.OutputNum != nil {
+		s := fmt.Sprintf("split=%d ", *o.OutputNum)
+		for index := 0; index < *o.OutputNum; index++ {
+			s = s + fmt.Sprintf("[out%d]", index)
+		}
+		o.ComplexFilters = append(o.ComplexFilters, ComplexFilter{
+			Filters: []string{s},
+		})
+	}
+
+	if len(o.ComplexFilters) > 0 {
+		var vs []string
+		for _, cf := range o.ComplexFilters {
+			var v string
+			for _, i := range cf.InputStreams {
+				v += "[" + i.string() + "]"
+			}
+			v += strings.Join(cf.Filters, ",")
+			for _, o := range cf.OutputStreams {
+				v += "[" + o.string() + "]"
+			}
+			vs = append(vs, v)
+		}
+		cmd.Args = append(cmd.Args, "-filter_complex", strings.Join(vs, ";"))
+	}
+
+	return
 }
 
 // EncodingOptions represents encoding options
@@ -421,7 +456,6 @@ type EncodingOptions struct {
 	BufSize         *Number
 	Codec           []StreamOption
 	Coder           string
-	ComplexFilters  []ComplexFilterOption
 	ConstantQuality *float64
 	CRF             *int
 	Filters         []StreamOption
@@ -436,6 +470,9 @@ type EncodingOptions struct {
 	RateControl     string
 	SCThreshold     *int
 	Tune            string
+	MaxMuxingQSize  *int
+	// the third party, e.g IDT
+	Customize map[string]string
 }
 
 func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
@@ -475,21 +512,6 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	}
 	if len(o.Coder) > 0 {
 		cmd.Args = append(cmd.Args, "-coder", o.Coder)
-	}
-	if len(o.ComplexFilters) > 0 {
-		var vs []string
-		for _, cf := range o.ComplexFilters {
-			var v string
-			for _, i := range cf.InputStreams {
-				v += "[" + i.string() + "]"
-			}
-			v += strings.Join(cf.Filters, ",")
-			for _, o := range cf.OutputStreams {
-				v += "[" + o.string() + "]"
-			}
-			vs = append(vs, v)
-		}
-		cmd.Args = append(cmd.Args, "-filter_complex", strings.Join(vs, ";"))
 	}
 	if o.ConstantQuality != nil {
 		cmd.Args = append(cmd.Args, "-cq", strconv.FormatFloat(*o.ConstantQuality, 'f', 3, 64))
@@ -532,7 +554,7 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 		}
 	}
 	for idx, ro := range o.Minrate {
-		if err = ro.adaptCmd(cmd, "-codec", func(i interface{}) (string, error) {
+		if err = ro.adaptCmd(cmd, "-minrate", func(i interface{}) (string, error) {
 			if v, ok := i.(Number); ok {
 				return v.string(), nil
 			}
@@ -556,6 +578,12 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	}
 	if len(o.Tune) > 0 {
 		cmd.Args = append(cmd.Args, "-tune", o.Tune)
+	}
+	if o.MaxMuxingQSize != nil {
+		cmd.Args = append(cmd.Args, "-max_muxing_queue_size", strconv.Itoa(*o.MaxMuxingQSize))
+	}
+	for key, value := range o.Customize {
+		cmd.Args = append(cmd.Args, fmt.Sprintf("-%s", key), value)
 	}
 	return
 }

@@ -6,16 +6,17 @@ import (
 	"os/exec"
 	"strings"
 
+	"os"
+	"time"
+
 	"github.com/asticode/go-astilog"
 	"github.com/pkg/errors"
-	"time"
-	"os"
 )
 
 // FFMpeg represents an entity capable of running an FFMpeg binary
 // https://ffmpeg.org/ffmpeg.html
 type FFMpeg struct {
-	binaryPath string
+	binaryPath   string
 	stdErrParser StdErrParser
 }
 
@@ -76,5 +77,37 @@ func (f *FFMpeg) Exec(ctx context.Context, g GlobalOptions, in []Input, out []Ou
 		err = errors.Wrapf(err, "astiffmpeg: running %s failed with stderr %s", strings.Join(cmd.Args, " "), bufErr.Bytes())
 		return
 	}
+	return
+}
+
+// Exec executes the binary with the specified options
+// ffmpeg [global_options] {[input_file_options] -i input_url} ... {[output_file_options] output_url} ...
+func (f *FFMpeg) BuildCmd(ctx context.Context, g GlobalOptions, in []Input,
+	complex ComplexFilterOptions, out []Output) (cmd *exec.Cmd, err error) {
+	// Create cmd
+	cmd = exec.CommandContext(ctx, f.binaryPath)
+	cmd.Env = os.Environ()
+
+	// Global options
+	g.adaptCmd(cmd)
+
+	// Inputs
+	for idx, i := range in {
+		if err = i.adaptCmd(cmd); err != nil {
+			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for input #%d failed", idx)
+			return
+		}
+	}
+
+	complex.adaptCmd(cmd)
+
+	// Outputs
+	for idx, o := range out {
+		if err = o.adaptCmd(cmd); err != nil {
+			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for output #%d failed", idx)
+			return
+		}
+	}
+
 	return
 }
