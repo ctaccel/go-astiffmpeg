@@ -462,6 +462,7 @@ type EncodingOptions struct {
 	CRF             *int
 	Filters         []StreamOption
 	Framerate       *float64
+	FrameSize       string
 	GOP             *int
 	KeyintMin       *int
 	Level           *float64
@@ -536,6 +537,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	}
 	if o.Framerate != nil {
 		cmd.Args = append(cmd.Args, "-r", strconv.FormatFloat(*o.Framerate, 'f', 3, 64))
+	}
+	if len(o.FrameSize) > 0 {
+		cmd.Args = append(cmd.Args, "-s", o.FrameSize)
 	}
 	if o.GOP != nil {
 		cmd.Args = append(cmd.Args, "-g", strconv.Itoa(*o.GOP))
