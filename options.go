@@ -2,6 +2,7 @@ package astiffmpeg
 
 import (
 	"os/exec"
+	"reflect"
 	"strconv"
 
 	"fmt"
@@ -450,6 +451,7 @@ func (o ComplexFilterOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 // EncodingOptions represents encoding options
 type EncodingOptions struct {
 	AudioSamplerate *int
+	AudioChannles   *int
 	BFrames         *int
 	Bitrate         []StreamOption
 	BStrategy       *int
@@ -471,13 +473,15 @@ type EncodingOptions struct {
 	SCThreshold     *int
 	Tune            string
 	MaxMuxingQSize  *int
-	// the third party, e.g IDT
-	Customize map[string]string
+	Customize       map[string]interface{} // the third party, e.g IDT
 }
 
 func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if o.AudioSamplerate != nil {
 		cmd.Args = append(cmd.Args, "-ar", strconv.Itoa(*o.AudioSamplerate))
+	}
+	if o.AudioChannles != nil {
+		cmd.Args = append(cmd.Args, "-ac", strconv.Itoa(*o.AudioChannles))
 	}
 	if o.BFrames != nil {
 		cmd.Args = append(cmd.Args, "-bf", strconv.Itoa(*o.BFrames))
@@ -583,7 +587,13 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 		cmd.Args = append(cmd.Args, "-max_muxing_queue_size", strconv.Itoa(*o.MaxMuxingQSize))
 	}
 	for key, value := range o.Customize {
-		cmd.Args = append(cmd.Args, fmt.Sprintf("-%s", key), value)
+		t := reflect.TypeOf(value)
+		switch t.Kind() {
+		case reflect.Float64:
+			cmd.Args = append(cmd.Args, fmt.Sprintf("-%s", key), strconv.Itoa(int(value.(float64))))
+		default:
+			cmd.Args = append(cmd.Args, fmt.Sprintf("-%s", key), value.(string))
+		}
 	}
 	return
 }
