@@ -451,7 +451,7 @@ func (o ComplexFilterOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 // EncodingOptions represents encoding options
 type EncodingOptions struct {
 	AudioSamplerate *int
-	AudioChannles   *int
+	AudioChannels   *int
 	BFrames         *int
 	Bitrate         []StreamOption
 	BStrategy       *int
@@ -481,8 +481,8 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if o.AudioSamplerate != nil {
 		cmd.Args = append(cmd.Args, "-ar", strconv.Itoa(*o.AudioSamplerate))
 	}
-	if o.AudioChannles != nil {
-		cmd.Args = append(cmd.Args, "-ac", strconv.Itoa(*o.AudioChannles))
+	if o.AudioChannels != nil {
+		cmd.Args = append(cmd.Args, "-ac", strconv.Itoa(*o.AudioChannels))
 	}
 	if o.BFrames != nil {
 		cmd.Args = append(cmd.Args, "-bf", strconv.Itoa(*o.BFrames))
