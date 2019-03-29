@@ -420,7 +420,7 @@ type ComplexFilterOptions struct {
 
 func (o ComplexFilterOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if o.OutputNum != nil {
-		s := fmt.Sprintf("split=%d ", *o.OutputNum)
+		s := fmt.Sprintf("split=%d", *o.OutputNum)
 		for index := 0; index < *o.OutputNum; index++ {
 			s = s + fmt.Sprintf("[out%d]", index)
 		}
@@ -442,7 +442,7 @@ func (o ComplexFilterOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			}
 			vs = append(vs, v)
 		}
-		cmd.Args = append(cmd.Args, "-filter_complex", strings.Join(vs, ";"))
+		cmd.Args = append(cmd.Args, "-filter_complex", "\""+strings.Join(vs, ";")+"\"")
 	}
 
 	return
@@ -652,11 +652,16 @@ func (os MapOptions) adaptCmd(cmd *exec.Cmd) {
 
 // MapOption represents a map option
 type MapOption struct {
+	Name        string
 	InputFileID int
 	Stream      *StreamSpecifier
 }
 
 func (o MapOption) adaptCmd(cmd *exec.Cmd) {
+	if len(o.Name) > 0 {
+		cmd.Args = append(cmd.Args, "-map", o.Name)
+		return
+	}
 	v := strconv.Itoa(o.InputFileID)
 	if o.Stream != nil {
 		v += ":" + o.Stream.string()
