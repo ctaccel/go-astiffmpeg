@@ -440,7 +440,9 @@ func (o ComplexFilterOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 			for _, o := range cf.OutputStreams {
 				v += "[" + o.string() + "]"
 			}
-			vs = append(vs, v)
+			if len(v) != 0 {
+				vs = append(vs, v)
+			}
 		}
 		cmd.Args = append(cmd.Args, "-filter_complex", "\""+strings.Join(vs, ";")+"\"")
 	}
