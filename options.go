@@ -444,7 +444,9 @@ func (o ComplexFilterOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 				vs = append(vs, v)
 			}
 		}
-		cmd.Args = append(cmd.Args, "-filter_complex", "\""+strings.Join(vs, ";")+"\"")
+		// cmd.Args = append(cmd.Args, "-filter_complex", "\""+strings.Join(vs, ";")+"\"")
+		cmd.Args = append(cmd.Args, "-filter_complex", strings.Join(vs, ","))
+
 	}
 
 	return
