@@ -315,7 +315,7 @@ func (o Output) adaptCmd(cmd *exec.Cmd) (err error) {
 			return
 		}
 	}
-	cmd.Args = append(cmd.Args, o.Path)
+	cmd.Args = append(cmd.Args, "-y", o.Path)
 	return
 }
 
