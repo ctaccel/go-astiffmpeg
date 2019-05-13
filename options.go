@@ -473,7 +473,7 @@ type EncodingOptions struct {
 	Maxrate         []StreamOption
 	Minrate         []StreamOption
 	Preset          string
-	Profile         string
+	Profile         []StreamOption
 	RateControl     string
 	SCThreshold     *int
 	Tune            string
@@ -579,8 +579,16 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if len(o.Preset) > 0 {
 		cmd.Args = append(cmd.Args, "-preset", o.Preset)
 	}
-	if len(o.Profile) > 0 {
-		cmd.Args = append(cmd.Args, "-profile", o.Profile)
+	for idx, ro := range o.Profile {
+		if err = ro.adaptCmd(cmd, "-profile", func(i interface{}) (string, error) {
+			if v, ok := i.(string); ok {
+				return v, nil
+			}
+			return "", errors.New("astiffmpeg: value should be a string")
+		}); err != nil {
+			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for -profile option #%d failed", idx)
+			return
+		}
 	}
 	if len(o.RateControl) > 0 {
 		cmd.Args = append(cmd.Args, "-rc", o.RateControl)
