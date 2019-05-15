@@ -479,6 +479,7 @@ type EncodingOptions struct {
 	Tune            string
 	MaxMuxingQSize  *int
 	Customize       map[string]interface{} // the third party, e.g IDT
+	RemoveAudio     string
 }
 
 func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
@@ -610,6 +611,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 		default:
 			cmd.Args = append(cmd.Args, fmt.Sprintf("-%s", key), value.(string))
 		}
+	}
+	if o.RemoveAudio == "y" {
+		cmd.Args = append(cmd.Args, "-an")
 	}
 	return
 }
