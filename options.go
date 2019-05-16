@@ -454,31 +454,36 @@ func (o ComplexFilterOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 
 // EncodingOptions represents encoding options
 type EncodingOptions struct {
-	AudioSamplerate *int
-	AudioChannels   *int
-	BFrames         *int
-	Bitrate         []StreamOption
-	BStrategy       *int
-	BufSize         *Number
-	Codec           []StreamOption
-	Coder           string
-	ConstantQuality *float64
-	CRF             *int
-	Filters         []StreamOption
-	Framerate       *float64
-	FrameSize       string
-	GOP             *int
-	KeyintMin       *int
-	Level           *float64
-	Maxrate         []StreamOption
-	Minrate         []StreamOption
-	Preset          string
-	Profile         string
-	RateControl     string
-	SCThreshold     *int
-	Tune            string
-	MaxMuxingQSize  *int
-	Customize       map[string]interface{} // the third party, e.g IDT
+	AudioSamplerate    *int
+	AudioChannels      *int
+	BFrames            *int
+	Bitrate            []StreamOption
+	BStrategy          *int
+	BufSize            *Number
+	Codec              []StreamOption
+	Coder              string
+	ConstantQuality    *float64
+	CRF                *int
+	Filters            []StreamOption
+	Framerate          *float64
+	FrameSize          string
+	GOP                *int
+	KeyintMin          *int
+	Level              *float64
+	Maxrate            []StreamOption
+	Minrate            []StreamOption
+	Preset             string
+	Profile            []StreamOption
+	RateControl        string
+	SCThreshold        *int
+	Tune               string
+	MaxMuxingQSize     *int
+	Customize          map[string]interface{} // the third party, e.g IDT
+	RemoveAudio        string
+	HlsTime            *int
+	HlsListSize        *int
+	HlsKeyInfoFile     string
+	HlsSegmentFileName string
 }
 
 func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
@@ -491,6 +496,7 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if o.BFrames != nil {
 		cmd.Args = append(cmd.Args, "-bf", strconv.Itoa(*o.BFrames))
 	}
+
 	for idx, ro := range o.Bitrate {
 		if err = ro.adaptCmd(cmd, "-b", func(i interface{}) (string, error) {
 			if v, ok := i.(Number); ok {
@@ -508,6 +514,7 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if o.BufSize != nil {
 		cmd.Args = append(cmd.Args, "-bufsize", o.BufSize.string())
 	}
+
 	for idx, ro := range o.Codec {
 		if err = ro.adaptCmd(cmd, "-codec", func(i interface{}) (string, error) {
 			if v, ok := i.(string); ok {
@@ -579,8 +586,16 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if len(o.Preset) > 0 {
 		cmd.Args = append(cmd.Args, "-preset", o.Preset)
 	}
-	if len(o.Profile) > 0 {
-		cmd.Args = append(cmd.Args, "-profile", o.Profile)
+	for idx, ro := range o.Profile {
+		if err = ro.adaptCmd(cmd, "-profile", func(i interface{}) (string, error) {
+			if v, ok := i.(string); ok {
+				return v, nil
+			}
+			return "", errors.New("astiffmpeg: value should be a string")
+		}); err != nil {
+			err = errors.Wrapf(err, "astiffmpeg: adapting cmd for -profile option #%d failed", idx)
+			return
+		}
 	}
 	if len(o.RateControl) > 0 {
 		cmd.Args = append(cmd.Args, "-rc", o.RateControl)
@@ -594,6 +609,18 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if o.MaxMuxingQSize != nil {
 		cmd.Args = append(cmd.Args, "-max_muxing_queue_size", strconv.Itoa(*o.MaxMuxingQSize))
 	}
+	if o.HlsTime != nil {
+		cmd.Args = append(cmd.Args, "-hls_time", strconv.Itoa(*o.HlsTime))
+	}
+	if o.HlsListSize != nil {
+		cmd.Args = append(cmd.Args, "-hls_list_size", strconv.Itoa(*o.HlsListSize))
+	}
+	if len(o.HlsKeyInfoFile) > 0 {
+		cmd.Args = append(cmd.Args, "-hls_key_info_file", o.HlsKeyInfoFile)
+	}
+	if len(o.HlsSegmentFileName) > 0 {
+		cmd.Args = append(cmd.Args, "-hls_segment_filename", o.HlsSegmentFileName)
+	}
 	for key, value := range o.Customize {
 		t := reflect.TypeOf(value)
 		switch t.Kind() {
@@ -602,6 +629,9 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 		default:
 			cmd.Args = append(cmd.Args, fmt.Sprintf("-%s", key), value.(string))
 		}
+	}
+	if o.RemoveAudio == "y" {
+		cmd.Args = append(cmd.Args, "-an")
 	}
 	return
 }
