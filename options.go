@@ -624,6 +624,8 @@ func (o EncodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	for key, value := range o.Customize {
 		t := reflect.TypeOf(value)
 		switch t.Kind() {
+		case reflect.Int:
+			cmd.Args = append(cmd.Args, fmt.Sprintf("-%s", key), strconv.Itoa(int(value.(int))))
 		case reflect.Float64:
 			cmd.Args = append(cmd.Args, fmt.Sprintf("-%s", key), strconv.Itoa(int(value.(float64))))
 		default:
