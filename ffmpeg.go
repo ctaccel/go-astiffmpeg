@@ -83,7 +83,7 @@ func (f *FFMpeg) Exec(ctx context.Context, g GlobalOptions, in []Input, out []Ou
 // Exec executes the binary with the specified options
 // ffmpeg [global_options] {[input_file_options] -i input_url} ... {[output_file_options] output_url} ...
 func (f *FFMpeg) BuildCmd(ctx context.Context, g GlobalOptions, in []Input,
-	complex ComplexFilterOptions, out []Output) (cmd *exec.Cmd, err error) {
+	complexInterface interface{}, out []Output) (cmd *exec.Cmd, err error) {
 	// Create cmd
 	cmd = exec.CommandContext(ctx, f.binaryPath)
 	cmd.Env = os.Environ()
@@ -114,7 +114,10 @@ func (f *FFMpeg) BuildCmd(ctx context.Context, g GlobalOptions, in []Input,
 		}
 	}
 
-	complex.adaptCmd(cmd)
+	complex, ok := complexInterface.(ComplexFilterOptions)
+	if ok {
+		complex.adaptCmd(cmd)
+	}
 
 	// Outputs
 	for idx, o := range out {
