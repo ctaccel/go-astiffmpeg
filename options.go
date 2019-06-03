@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"math"
-	"time"
 
 	"github.com/asticode/go-astilog"
 	"github.com/pkg/errors"
@@ -259,10 +258,10 @@ type DecodingOptions struct {
 	Codec                      *StreamOption
 	DeinterlacingMode          string
 	DropSecondField            *bool
-	Duration                   time.Duration
+	Duration                   string
 	HardwareAcceleration       string
 	HardwareAccelerationDevice *int
-	Position                   time.Duration
+	Position                   string
 }
 
 func (o DecodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
@@ -275,11 +274,11 @@ func (o DecodingOptions) adaptCmd(cmd *exec.Cmd) (err error) {
 	if len(o.DeinterlacingMode) > 0 {
 		cmd.Args = append(cmd.Args, "-deint", o.DeinterlacingMode)
 	}
-	if o.Duration > 0 {
-		cmd.Args = append(cmd.Args, "-t", strconv.FormatFloat(o.Duration.Seconds(), 'f', 3, 64))
+	if len(o.Duration) > 0 {
+		cmd.Args = append(cmd.Args, "-t", o.Duration)
 	}
-	if o.Position > 0 {
-		cmd.Args = append(cmd.Args, "-ss", strconv.FormatFloat(o.Position.Seconds(), 'f', 3, 64))
+	if len(o.Position) > 0 {
+		cmd.Args = append(cmd.Args, "-ss", o.Position)
 	}
 	if o.DropSecondField != nil {
 		v := "0"
